@@ -6,25 +6,22 @@ pipeline {
         APP_PORT = '5000'
     }
     parameters {
-        booleanParam(name: 'EXECUTE_TESTS', defaultValue: true, description: 'Run post-deployment tests?')
+        booleanParam(name: 'EXECUTE_TESTS', defaultValue: true, description: 'Enable/disable the post-deployment tests.')
+        booleanParam(name: 'KEEP_CONTAINER', defaultValue: true, description: 'Keep container running after pipeline?')
     }
-
     stages {
         stage('Clone Repository') {
             steps {
-                echo '[#] Cloning Repository'
-                sh 'ls -la'
+                checkout scm
             }
         }
         stage('Build Docker Image') {
             steps {
-                echo '[#] Building Docker Image'
                 sh "docker build -t $DOCKER_IMAGE ."
             }
         }
         stage('Run Container') {
             steps {
-                echo '[#] Running Docker Container'
                 sh """
                     docker rm -f $CONTAINER_NAME || true
                     docker run -d --name $CONTAINER_NAME -p $APP_PORT:5000 $DOCKER_IMAGE
@@ -32,36 +29,33 @@ pipeline {
                 sleep 10
             }
         }
-        stage('Run Tests') {
-            when {
-                expression { return params.EXECUTE_TESTS == true }
-            }
-            steps {
-                echo '[#] Running Health Check Test'
-                script {
-                    def result = sh(script: "curl -s -o /dev/null -w \"%{http_code}\" http://localhost:$APP_PORT/", returnStdout: true).trim()
-                    if (result != '200') {
-                        error "Health check failed with status: ${result}"
-                    } else {
-                        echo "Health check passed with status: ${result}"
-                    }
-                }
-            }
-        }
-
+        stage('Post-Deployment Tests') {
+		    when {
+		        expression { params.EXECUTE_TESTS }
+		    }
+		    steps {
+		        echo '[#] Running post-deployment tests...'
+		        sh """
+		            STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$APP_PORT/)
+		            echo "Received HTTP status: \$STATUS"
+		            [ "\$STATUS" -eq 200 ]
+		        """
+		    }
+		}
     }
-
     post {
         always {
-            echo '[#] Cleaning up Docker resources...'
-            sh "docker stop $CONTAINER_NAME || true"
-            sh "docker rm $CONTAINER_NAME || true"
+            script {
+                if (!params.KEEP_CONTAINER) {
+                    sh "docker rm -f $CONTAINER_NAME || true"
+                }
+            }
         }
         success {
             echo '[+] Pipeline completed successfully.'
         }
         failure {
-            echo '[!] Pipeline failed.'
+            echo '[!] Pipeline Process/Build Failed!!!'
         }
     }
 }

@@ -10,6 +10,8 @@ if [ -f .env ]; then
 fi
 
 echo "[#] Running database migrations"
+flask db init
+flask db migrate -m "Initial Migration"
 flask db upgrade
 
 echo "[#] Starting Flask app"
