@@ -1,6 +1,7 @@
 virtual-venv/
 __pycache__/
 .env.example
+Jenkinsfile
 migrations/
 .gitignore
 README.md
