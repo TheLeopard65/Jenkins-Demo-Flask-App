@@ -1,0 +1,9 @@
+virtual-venv/
+__pycache__/
+.env.example
+migrations/
+.gitignore
+README.md
+instance/
+start.sh
+LICENSE

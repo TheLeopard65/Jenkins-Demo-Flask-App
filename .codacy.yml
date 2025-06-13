@@ -1,0 +1,25 @@
+---
+engines:
+  pylint:
+    enabled: true
+  flake8:
+    enabled: true
+  bandit:
+    enabled: true
+  radon:
+    enabled: true
+
+languages:
+  python:
+    enabled: true
+
+exclude_paths:
+  - "docker-entrypoint.sh"
+  - "requirements.txt"
+  - ".dockerignore"
+  - ".env.example"
+  - ".codacy.yml"
+  - ".gitignore"
+  - "README.md"
+  - ".git/**/*"
+  - "LICENSE"
